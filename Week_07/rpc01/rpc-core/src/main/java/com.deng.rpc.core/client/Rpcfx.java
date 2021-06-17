@@ -23,6 +23,7 @@ import java.util.List;
 public final class Rpcfx {
 
     static {
+        // 解决autotype被禁止问题,这个解禁autotype只针对所设置的这个包下的对象
         ParserConfig.getGlobalInstance().addAccept("com.deng");
     }
 
@@ -33,7 +34,7 @@ public final class Rpcfx {
 
         // curator Provider list from zk
         List<String> invokers = new ArrayList<>();
-        invokers = getInvokers(serviceClass,zkUrl);
+        invokers.addAll(getInvokers(serviceClass,zkUrl));
         // 1. 简单：从zk拿到服务提供的列表
         // 2. 挑战：监听zk的临时节点，根据事件更新这个list（注意，需要做个全局map保持每个服务的提供者List）
 
