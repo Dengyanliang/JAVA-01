@@ -6,6 +6,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -13,15 +14,21 @@ import org.springframework.stereotype.Component;
 import java.net.InetAddress;
 
 @Component
-public class ZkClient {
-
-    @Autowired
-    private IpConfiguration ipConfiguration;
+public class ZkClient implements InitializingBean {
 
     @Value("${server.port}")
     private int port;
 
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        initRegisterService();
+    }
+
     public ZkClient(){
+
+    }
+
+    private void initRegisterService(){
         // start zk client
         RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
         CuratorFramework client = CuratorFrameworkFactory.builder().connectString("localhost:2181").namespace("rpcfx").retryPolicy(retryPolicy).build();
