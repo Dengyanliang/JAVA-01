@@ -8,6 +8,10 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import org.apache.curator.RetryPolicy;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -19,7 +23,7 @@ import java.util.List;
 public final class Rpcfx {
 
     static {
-        ParserConfig.getGlobalInstance().addAccept("io.kimmking");
+        ParserConfig.getGlobalInstance().addAccept("com.deng");
     }
 
     public static <T, filters> T createFromRegistry(final Class<T> serviceClass, final String zkUrl,
@@ -29,6 +33,7 @@ public final class Rpcfx {
 
         // curator Provider list from zk
         List<String> invokers = new ArrayList<>();
+        invokers = getInvokers(serviceClass,zkUrl);
         // 1. 简单：从zk拿到服务提供的列表
         // 2. 挑战：监听zk的临时节点，根据事件更新这个list（注意，需要做个全局map保持每个服务的提供者List）
 
@@ -36,8 +41,30 @@ public final class Rpcfx {
 
         String url = loadBalance.select(urls); // router, loadbalance
 
+        String[] addressArr = url.split("_");
+
+        url = "http:"+addressArr[0]+":"+addressArr[1];
+
         return (T) create(serviceClass, url, filter);
 
+    }
+
+    private static List<String> getInvokers(final Class serviceClass, final String zkUrl){
+        List<String> invokers = null;
+        try {
+            invokers = new ArrayList<>();
+
+            RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+            CuratorFramework client = CuratorFrameworkFactory.builder().connectString(zkUrl).namespace("rpcfx").retryPolicy(retryPolicy).build();
+            client.start();
+
+            String url = "/"+serviceClass.getName();
+            invokers = client.getChildren().forPath(url);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return invokers;
     }
 
     public static <T> T create(final Class<T> serviceClass, final String url, Filter... filters) {

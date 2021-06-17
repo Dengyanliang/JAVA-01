@@ -27,16 +27,18 @@ public class RpcfxClientApplication {
 		// UserService service = new xxx();
 		// service.findById
 
-		UserService userService = Rpcfx.create(UserService.class, "http://localhost:8080/");
+		UserService userService = Rpcfx.create(UserService.class, "http://localhost:8081/");
 		User user = userService.findById(1);
 		System.out.println("find user id=1 from server: " + user.getName());
 
-		OrderService orderService = Rpcfx.create(OrderService.class, "http://localhost:8080/");
+		OrderService orderService = Rpcfx.create(OrderService.class, "http://localhost:8081/");
 		Order order = orderService.findOrderById(1992129);
 		System.out.println(String.format("find order name=%s, amount=%f",order.getName(),order.getAmount()));
 
 		//
 		UserService userService2 = Rpcfx.createFromRegistry(UserService.class, "localhost:2181", new TagRouter(), new RandomLoadBalancer(), new CuicuiFilter());
+		user = userService2.findById(1);
+		System.out.println("----- find user2 id=1 from server: " + user.getName());
 
 //		SpringApplication.run(RpcfxClientApplication.class, args);
 	}

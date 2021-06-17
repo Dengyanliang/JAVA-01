@@ -51,7 +51,7 @@ public class RpcfxServerApplication {
 	private static void registerService(CuratorFramework client, String service) throws Exception {
 		ServiceProviderDesc userServiceSesc = ServiceProviderDesc.builder()
 				.host(InetAddress.getLocalHost().getHostAddress())
-				.port(8080).serviceClass(service).build();
+				.port(8081).serviceClass(service).build();
 		// String userServiceSescJson = JSON.toJSONString(userServiceSesc);
 
 		try {
