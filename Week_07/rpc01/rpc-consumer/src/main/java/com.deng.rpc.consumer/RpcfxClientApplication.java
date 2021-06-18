@@ -27,11 +27,11 @@ public class RpcfxClientApplication {
 		// UserService service = new xxx();
 		// service.findById
 
-		UserService userService = Rpcfx.create(UserService.class, "http://localhost:8081/");
+		UserService userService = Rpcfx.create(UserService.class, "http://localhost:8082/");
 		User user = userService.findById(1);
 		System.out.println("find user id=1 from server: " + user.getName());
 
-		OrderService orderService = Rpcfx.create(OrderService.class, "http://localhost:8081/");
+		OrderService orderService = Rpcfx.create(OrderService.class, "http://localhost:8082/");
 		Order order = orderService.findOrderById(1992129);
 		System.out.println(String.format("find order name=%s, amount=%f",order.getName(),order.getAmount()));
 
@@ -43,28 +43,28 @@ public class RpcfxClientApplication {
 //		SpringApplication.run(RpcfxClientApplication.class, args);
 	}
 
-	private static class TagRouter implements Router {
-		@Override
-		public List<String> route(List<String> urls) {
-			return urls;
-		}
-	}
-
-	private static class RandomLoadBalancer implements LoadBalancer {
-		@Override
-		public String select(List<String> urls) {
-			return urls.get(0);
-		}
-	}
-
-	@Slf4j
-	private static class CuicuiFilter implements Filter {
-		@Override
-		public boolean filter(RpcfxRequest request) {
-			log.info("filter {} -> {}", this.getClass().getName(), request.toString());
-			return true;
-		}
-	}
+//	private static class TagRouter implements Router {
+//		@Override
+//		public List<String> route(List<String> urls) {
+//			return urls;
+//		}
+//	}
+//
+//	private static class RandomLoadBalancer implements LoadBalancer {
+//		@Override
+//		public String select(List<String> urls) {
+//			return urls.get(0);
+//		}
+//	}
+//
+//	@Slf4j
+//	private static class CuicuiFilter implements Filter {
+//		@Override
+//		public boolean filter(RpcfxRequest request) {
+//			log.info("filter {} -> {}", this.getClass().getName(), request.toString());
+//			return true;
+//		}
+//	}
 }
 
 

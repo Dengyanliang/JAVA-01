@@ -5,6 +5,8 @@ import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.deng.rpc.core.api.RpcfxRequest;
 import com.deng.rpc.core.api.RpcfxResolver;
 import com.deng.rpc.core.api.RpcfxResponse;
+import com.deng.rpc.core.common.BizErrorCodeEnum;
+import com.deng.rpc.core.common.RpcfxException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -22,8 +24,8 @@ public class RpcfxInvoker {
         RpcfxResponse response = new RpcfxResponse();
         String serviceClass = request.getServiceClass();
 
-        // 作业1：改成泛型和反射
-        Object service = resolver.resolve(serviceClass);//this.applicationContext.getBean(serviceClass);
+        // 作业1：改成泛型和反射 //this.applicationContext.getBean(serviceClass);
+        Object service = resolver.resolve(serviceClass);
 
         try {
             Method method = resolveMethodFromClass(service.getClass(), request.getMethod());
@@ -38,8 +40,13 @@ public class RpcfxInvoker {
 
             // 2.封装一个统一的RpcfxException
             // 客户端也需要判断异常
-            e.printStackTrace();
-            response.setException(e);
+//            e.printStackTrace();
+
+            RpcfxException rpcfxException = new RpcfxException();
+            rpcfxException.setErrorMessage(e.getMessage());
+            rpcfxException.setErrorCode(BizErrorCodeEnum.SYSTEM_ERROR);
+
+            response.setException(rpcfxException);
             response.setStatus(false);
             return response;
         }
