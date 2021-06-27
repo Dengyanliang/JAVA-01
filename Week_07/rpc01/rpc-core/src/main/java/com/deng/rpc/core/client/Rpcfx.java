@@ -3,7 +3,12 @@ package com.deng.rpc.core.client;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.ParserConfig;
-import com.deng.rpc.core.api.*;
+import com.deng.rpc.core.api.Filter;
+import com.deng.rpc.core.api.Router;
+import com.deng.rpc.core.domain.RpcfxRequest;
+import com.deng.rpc.core.domain.RpcfxResponse;
+import com.deng.rpc.core.api.LoadBalancer;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -23,7 +28,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
+@Slf4j
 public final class Rpcfx {
 
     static {
@@ -126,8 +133,8 @@ public final class Rpcfx {
             return JSON.parse(response.getResult().toString());
         }
 
-        private RpcfxResponse post(RpcfxRequest req, String url) throws IOException {
-            String reqJson = JSON.toJSONString(req);
+        private RpcfxResponse post(RpcfxRequest request, String url) throws IOException {
+            String reqJson = JSON.toJSONString(request);
             System.out.println("req json: "+reqJson);
 
             // 1.可以复用client
@@ -145,22 +152,26 @@ public final class Rpcfx {
 //            String respJson = client.newCall(request).execute().body().string();
 
             // 2.Httpclient
-            HttpPost httpPost = new HttpPost(url);
-            httpPost.setEntity(new StringEntity(JSON.toJSONString(req)));
-            httpPost.setHeader("Content-Type","application/json;charset=utf8");
-
-            HttpClient httpClient = HttpClientBuilder.create().build();
-            HttpResponse response = httpClient.execute(httpPost);
-            HttpEntity responseEntity = response.getEntity();
-            String respJson = EntityUtils.toString(responseEntity);
+//            HttpPost httpPost = new HttpPost(url);
+//            httpPost.setEntity(new StringEntity(reqJson));
+//            httpPost.setHeader("Content-Type","application/json;charset=utf8");
+//
+//            HttpClient httpClient = HttpClientBuilder.create().build();
+//            HttpResponse response = httpClient.execute(httpPost);
+//            HttpEntity responseEntity = response.getEntity();
+//            String respJson = EntityUtils.toString(responseEntity);
 
             // 3.nettyClient
 
+            NettyClient nettyClient = new NettyClient("127.0.0.1",8082);
+            NettyClientHandler clientHandler = nettyClient.getClientHandler();
+            clientHandler.sendMessage(reqJson);
 
-            System.out.println("resp json: "+respJson);
+            String respJson = clientHandler.getResult();
+            System.out.println("resp json 1: "+respJson);
+
             return JSON.parseObject(respJson, RpcfxResponse.class);
         }
     }
-
 
 }

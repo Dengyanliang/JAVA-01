@@ -1,4 +1,4 @@
-package com.deng.rpc.core.api;
+package com.deng.rpc.core.domain;
 
 import lombok.Builder;
 import lombok.Data;

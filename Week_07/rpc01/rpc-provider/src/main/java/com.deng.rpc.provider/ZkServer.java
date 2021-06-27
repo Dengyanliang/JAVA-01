@@ -1,20 +1,19 @@
 package com.deng.rpc.provider;
 
-import com.deng.rpc.core.api.ServiceProviderDesc;
+import com.deng.rpc.core.domain.ServiceProviderDesc;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
 
 @Component
-public class ZkClient implements InitializingBean {
+public class ZkServer implements InitializingBean {
 
     @Value("${server.port}")
     private int port;
@@ -24,7 +23,7 @@ public class ZkClient implements InitializingBean {
         initRegisterService();
     }
 
-    public ZkClient(){
+    public ZkServer(){
 
     }
 

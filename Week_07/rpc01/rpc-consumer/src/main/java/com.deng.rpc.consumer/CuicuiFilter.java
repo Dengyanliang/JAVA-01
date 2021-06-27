@@ -1,7 +1,7 @@
 package com.deng.rpc.consumer;
 
 import com.deng.rpc.core.api.Filter;
-import com.deng.rpc.core.api.RpcfxRequest;
+import com.deng.rpc.core.domain.RpcfxRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
