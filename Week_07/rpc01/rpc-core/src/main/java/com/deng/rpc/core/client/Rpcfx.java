@@ -8,6 +8,7 @@ import com.deng.rpc.core.api.Router;
 import com.deng.rpc.core.domain.RpcfxRequest;
 import com.deng.rpc.core.domain.RpcfxResponse;
 import com.deng.rpc.core.api.LoadBalancer;
+import io.netty.channel.ChannelFuture;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.apache.curator.RetryPolicy;
@@ -27,18 +28,24 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 @Slf4j
 public final class Rpcfx {
+
+    private final static String HOST = "host";
+    private final static String PORT = "port";
+    private final static String URI = "uri";
 
     static {
         // 解决autotype被禁止问题,这个解禁autotype只针对所设置的这个包下的对象
         ParserConfig.getGlobalInstance().addAccept("com.deng");
     }
 
-    public static <T, filters> T createFromRegistry(final Class<T> serviceClass, final String zkUrl,
+    public static <T, filters> T createFromRegistry(final Class<T> serviceClass, final String zkUrl,final String uri,
                                                     Router router, LoadBalancer loadBalance, Filter filter) {
 
         // 加filte之一
@@ -55,7 +62,7 @@ public final class Rpcfx {
 
         String[] addressArr = url.split("_");
 
-        url = "http://" + addressArr[0] + ":" + addressArr[1];
+        url = "http://" + addressArr[0] + ":" + addressArr[1] + uri;
         System.out.println("url:"+url);
 
         return (T) create(serviceClass, url, filter);
@@ -163,10 +170,10 @@ public final class Rpcfx {
 
             // 3.nettyClient
 
-            NettyClient nettyClient = new NettyClient("127.0.0.1",8082);
+            Map urlInfo = getUrlInfo(url);
+            NettyClient nettyClient = new NettyClient(urlInfo.get(HOST).toString(),Integer.parseInt(urlInfo.get(PORT).toString()));
             NettyClientHandler clientHandler = nettyClient.getClientHandler();
-            clientHandler.sendMessage(reqJson);
-
+            clientHandler.sendMessage(reqJson,urlInfo.get(HOST).toString(),urlInfo.get(URI).toString());
             String respJson = clientHandler.getResult();
             System.out.println("resp json 1: "+respJson);
 
@@ -174,4 +181,22 @@ public final class Rpcfx {
         }
     }
 
+    private static Map getUrlInfo(String url){
+        int start = url.indexOf("//");
+        url = url.substring(start+2);
+
+        int end = url.indexOf("/");
+        if(end == -1){
+            end = url.length();
+        }
+        String uri = url.substring(end);
+        String address = url.substring(0,end);
+        String[] addArr = address.split(":");
+        Map map = new HashMap();
+        map.put(HOST,addArr[0]);
+        map.put(PORT,addArr[1]);
+        map.put(URI,uri);
+
+        return map;
+    }
 }

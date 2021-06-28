@@ -29,7 +29,7 @@ public class RpcfxClientApplication {
 		System.out.println(String.format("find order name=%s, amount=%f",order.getName(),order.getAmount()));
 
 		//
-		UserService userService2 = Rpcfx.createFromRegistry(UserService.class, "localhost:2181", new TagRouter(), new RandomLoadBalancer(), new CuicuiFilter());
+		UserService userService2 = Rpcfx.createFromRegistry(UserService.class, "localhost:2181","/invoke", new TagRouter(), new RandomLoadBalancer(), new CuicuiFilter());
 		user = userService2.findById(1);
 		System.out.println("----- find user2 id=1 from server: " + user.getName());
 

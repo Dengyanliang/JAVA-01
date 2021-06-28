@@ -15,22 +15,26 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 使用springboot启动，就不用再使用netty服务端启动了，没有必要，因为对于客户端来说，连接只需要端口号和ip即可
+ */
 @SpringBootApplication
 //@RestController
-public class RpcfxServerApplication implements CommandLineRunner{
+//public class RpcfxServerApplication implements CommandLineRunner{
+public class RpcfxServerApplication {
 
-	@Autowired
-	private NettyServer nettyServer;
+//	@Autowired
+//	private NettyServer nettyServer;
 
 	public static void main(String[] args) throws Exception {
 		// 进一步的优化，是在spring加载完成后，从里面拿到特定注解的bean，自动注册到zk
 		SpringApplication.run(RpcfxServerApplication.class, args);
 	}
 
-	@Override
-	public void run(String... args) throws Exception {
-		new Thread(nettyServer).start();
-	}
+//	@Override
+//	public void run(String... args) throws Exception {
+//		new Thread(nettyServer).start();
+//	}
 
 	@Bean
 	public RpcfxInvoker createInvoker(@Autowired RpcfxResolver resolver){

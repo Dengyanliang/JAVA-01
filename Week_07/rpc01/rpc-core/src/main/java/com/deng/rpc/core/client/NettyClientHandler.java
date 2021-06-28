@@ -13,6 +13,7 @@ import io.netty.util.CharsetUtil;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Objects;
 
 /**
  * @Desc:
@@ -38,33 +39,33 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
         System.out.println("channelRead:" + string);
 
         result = string;
-        promise.setSuccess();
+        promise.setSuccess(); // 接收成功之后设置，此时会触发promise.await，从而解锁
     }
 
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("channelActive....");
         this.context = ctx;
+        System.out.println("channelActive....");
     }
 
-    public void sendMessage(Object msg){
+    public void sendMessage(Object msg,String host,String uriStr){
         System.out.println("context:"+context);
         promise = context.newPromise();
 
-        URI uri = null;
         try {
-            uri = new URI("/invoke");
+            URI uri = new URI(uriStr);
 
             DefaultFullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST,
                     uri.toASCIIString(), Unpooled.wrappedBuffer(msg.toString().getBytes("UTF-8")));
 
             req.headers().set(HttpHeaderNames.CONTENT_TYPE,"application/json;charset=utf8");
-            req.headers().set(HttpHeaderNames.HOST, "127.0.0.1");
+            req.headers().set(HttpHeaderNames.HOST, host);
             req.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
             req.headers().set(HttpHeaderNames.CONTENT_LENGTH, req.content().readableBytes());
 
             context.writeAndFlush(req);
+            System.out.println("发送完毕...");
         } catch (Exception e) {
             e.printStackTrace();
         }

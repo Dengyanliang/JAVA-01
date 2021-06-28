@@ -40,7 +40,6 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
             String data = httpRequest.content().toString(CharsetUtil.UTF_8);
             HttpMethod method = httpRequest.method();
 
-            //...
             System.out.println("NettyServerHandler 客户端请求数据内容 ：" + data);
 
             // 将json转化为对象
@@ -53,7 +52,6 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
 
             System.out.println("result:"+result);
             response(result, ctx, HttpResponseStatus.OK);
-            //..
         } catch (Exception e) {
             System.out.println("服务器处理失败...");
         } finally {
@@ -65,14 +63,6 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
         FullHttpResponse resp = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status,
                 Unpooled.copiedBuffer(data, CharsetUtil.UTF_8));
         resp.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json;charset=UTF-8");
-        ctx.writeAndFlush(resp).addListener(ChannelFutureListener.CLOSE);
-    }
-
-    private void response(Object data, ChannelHandlerContext ctx, HttpResponseStatus status){
-        FullHttpResponse resp = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status,
-                Unpooled.copiedBuffer(data.toString(), CharsetUtil.UTF_8));
-//        resp.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain;charset=UTF-8");
-        resp.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json;charset=utf8");
         ctx.writeAndFlush(resp).addListener(ChannelFutureListener.CLOSE);
     }
 }

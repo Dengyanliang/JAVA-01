@@ -1,9 +1,5 @@
 package com.deng.rpc.core.client;
 
-import com.deng.rpc.core.domain.NettyRpcDecoder;
-import com.deng.rpc.core.domain.NettyRpcEncoder;
-import com.deng.rpc.core.domain.RpcfxRequest;
-import com.deng.rpc.core.domain.RpcfxResponse;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -24,7 +20,6 @@ public class NettyClient {
 
     private String host;
     private int port;
-    private Channel channel;
     private NettyClientHandler clientHandler;
 
     public NettyClient(String host, int port) {
@@ -69,11 +64,8 @@ public class NettyClient {
                     }
                 }
             });
-            channel = future.channel();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
-
 }
