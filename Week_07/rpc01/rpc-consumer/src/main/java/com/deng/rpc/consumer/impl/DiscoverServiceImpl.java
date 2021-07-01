@@ -1,9 +1,6 @@
-package com.deng.rpc.consumer;
+package com.deng.rpc.consumer.impl;
 
-
-import com.deng.rpc.core.api.Filter;
-import com.deng.rpc.core.api.LoadBalancer;
-import com.deng.rpc.core.api.Router;
+import com.deng.rpc.consumer.service.DiscoverService;
 import com.deng.rpc.core.common.ZkConfig;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -11,60 +8,42 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.*;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class ZkClient {
+public class DiscoverServiceImpl implements DiscoverService {
+
+    private static Map<String,List<String>> invokerMap;
 
     private CuratorFramework client;
 
-    public ZkClient(){
-        System.out.println("------ZkClient------");
+    public DiscoverServiceImpl(){
+        System.out.println("------DiscoverServiceImpl------");
+        invokerMap = new ConcurrentHashMap();
         RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
         client = CuratorFrameworkFactory.builder().connectString(ZkConfig.CONNECT_STRING).retryPolicy(retryPolicy).build();
         client.start();
-
-        String url = "/rpcfx/com.deng.rpc.api.UserService";
-        registerWatcher(client,url);
     }
 
-    public String createFromRegistry(final Class<?> serviceClass, final String zkUrl, final String uri,
-                                                    Router router, LoadBalancer loadBalance, Filter filter) {
-
-        // 加filte之一
-
-        // curator Provider list from zk
-        List<String> invokers = new ArrayList<>();
-        invokers.addAll(getInvokers(serviceClass,zkUrl));
-        // 1. 简单：从zk拿到服务提供的列表
-        // 2. 挑战：监听zk的临时节点，根据事件更新这个list（注意，需要做个全局map保持每个服务的提供者List）
-
-        List<String> urls = router.route(invokers);
-
-        String url = loadBalance.select(urls); // router, loadbalance
-
-        String[] addressArr = url.split("_");
-
-        url = "http://" + addressArr[0] + ":" + addressArr[1] + uri;
-        System.out.println("url:"+url);
-
-        return url;
-
-    }
-
-
-    private List<String> getInvokers(final Class serviceClass, final String zkUrl){
-        List<String> invokers = new ArrayList<>();
+    @Override
+    public List<String> getInvokers(Class<?> serviceClass) {
+        List<String> invokers = invokerMap.get(serviceClass.getName());
+        if(!CollectionUtils.isEmpty(invokers)){
+            return invokers;
+        }
         try {
-            String url = "/rpcfx/"+serviceClass.getName();
+            String url = ZkConfig.ROOT_PATH + ZkConfig.OBLIQUE_LINE +serviceClass.getName();
             invokers = client.getChildren().forPath(url);
 
+            invokerMap.put(serviceClass.getName(),invokers);
             // 注册监听器
-            registerWatcher(client,url);
+            registerWatcher(client,url,serviceClass);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -72,45 +51,52 @@ public class ZkClient {
         return invokers;
     }
 
-    private static void registerWatcher(CuratorFramework curatorFramework, String path){
+    private void registerWatcher(CuratorFramework curatorFramework, String path, Class serviceClass){
         CuratorCache curatorCache = CuratorCache.build(curatorFramework,path);
         // 当前节点
-        CuratorCacheListener listener = CuratorCacheListener.builder().forNodeCache(new NodeCacheListener() {
+        CuratorCacheListener currentNodeListener = CuratorCacheListener.builder().forNodeCache(new NodeCacheListener() {
             @Override
             public void nodeChanged() throws Exception {
-                System.out.println("---------forNodeCache------------");
+                List<String> invokes = curatorFramework.getChildren().forPath(path);
+                invokerMap.put(serviceClass.getName(), invokes);
+                System.out.println("currentNodeListener invokes:"+invokes);
+
+                System.out.println("---------currentNodeListener------------");
                 Optional<ChildData> childData = curatorCache.get(path);
                 if(childData.isPresent()){
                     String path1 = childData.get().getPath();
                     String data = new String(childData.get().getData());
-                    System.out.println("forNodeCache data:" + data + ",path:" + path1);
+
+                    Class<? extends ChildData> aClass = childData.get().getClass();
+
+                    System.out.println("currentNodeListener data:" + data + ",path:" + path1 + ":" + aClass.getName());
                 }
             }
         }).build();
-        curatorCache.listenable().addListener(listener);
+        curatorCache.listenable().addListener(currentNodeListener);
 
         // 监听子节点，不监听当前节点
-        CuratorCacheListener pathCacheListener = CuratorCacheListener.builder().forPathChildrenCache(path, curatorFramework, new PathChildrenCacheListener() {
+        CuratorCacheListener childNodeListener = CuratorCacheListener.builder().forPathChildrenCache(path, curatorFramework, new PathChildrenCacheListener() {
             @Override
             public void childEvent(CuratorFramework curatorFramework, PathChildrenCacheEvent event) throws Exception {
-                System.out.println("---------forPathChildrenCache------------");
+                System.out.println("---------childNodeListener------------");
                 String type = event.getType().name();
-                System.out.println("pathCacheListener type:" + type);
+                System.out.println("childNodeListener type:" + type);
                 ChildData data = event.getData();
                 if(Objects.nonNull(data)){
                     String path1 = data.getPath();
                     String nodeData = new String(data.getData());
-                    System.out.println("pathCacheListener: " + path1 + "," + nodeData);
+                    System.out.println("childNodeListener: " + path1 + "," + nodeData);
                 }
             }
         }).build();
-        curatorCache.listenable().addListener(pathCacheListener);
+        curatorCache.listenable().addListener(childNodeListener);
 
         //
         CuratorCacheListener treeCacheListener = CuratorCacheListener.builder().forTreeCache(curatorFramework, new TreeCacheListener() {
             @Override
             public void childEvent(CuratorFramework curatorFramework, TreeCacheEvent event) throws Exception {
-                System.out.println("---------forTreeCache------------");
+                System.out.println("---------treeCacheListener------------");
                 String type = event.getType().name();
                 System.out.println("treeCacheListener type:" + type);
                 ChildData data = event.getData();

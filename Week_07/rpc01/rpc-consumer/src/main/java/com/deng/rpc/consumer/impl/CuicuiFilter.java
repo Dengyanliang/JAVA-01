@@ -1,4 +1,4 @@
-package com.deng.rpc.consumer;
+package com.deng.rpc.consumer.impl;
 
 import com.deng.rpc.core.api.Filter;
 import com.deng.rpc.core.domain.RpcfxRequest;
