@@ -34,8 +34,6 @@ public class ZkServer implements InitializingBean {
         client.start();
 
         // register service
-        // xxx "io.kimmking.rpcfx.demo.api.UserService"
-
         String userService = "com.deng.rpc.api.UserService";
         registerService(client, userService);
         String orderService = "com.deng.rpc.api.OrderService";
@@ -49,14 +47,16 @@ public class ZkServer implements InitializingBean {
             ServiceProviderDesc userServiceSesc = ServiceProviderDesc.builder()
                     .host(InetAddress.getLocalHost().getHostAddress())
                     .port(port).serviceClass(service).build();
-            // String userServiceSescJson = JSON.toJSONString(userServiceSesc);
-
-            if ( null == client.checkExists().forPath("/" + service)) {
-                client.create().withMode(CreateMode.PERSISTENT).forPath("/" + service, "service".getBytes());
+            String serviceUrl = "/" + service;
+            if (client.checkExists().forPath(serviceUrl) == null) {
+                client.create().withMode(CreateMode.PERSISTENT).forPath(serviceUrl, "service".getBytes());
             }
 
-            client.create().withMode(CreateMode.EPHEMERAL).
-                    forPath( "/" + service + "/" + userServiceSesc.getHost() + "_" + userServiceSesc.getPort(), "provider".getBytes());
+            String serviceHostUrl = "/" + service + "/" + userServiceSesc.getHost() + "_" + userServiceSesc.getPort();
+            if(client.checkExists().forPath(serviceHostUrl) == null){
+                client.create().withMode(CreateMode.EPHEMERAL).
+                        forPath( serviceHostUrl, "provider".getBytes());
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
