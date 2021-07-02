@@ -54,6 +54,12 @@
 			<version>4.1.10.Final</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.thoughtworks.xstream</groupId>
+			<artifactId>xstream</artifactId>
+			<version>1.4.17</version>
+		</dependency>
+
 	</dependencies>
 
 </project>

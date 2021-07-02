@@ -9,13 +9,13 @@ import com.deng.rpc.consumer.service.QueryService;
 import org.springframework.stereotype.Component;
 
 @Component
-@MyInvoke(url = "http://localhost:8082")
+//@MyInvoke(url = "http://localhost:8082")
 public class QueryServiceImpl implements QueryService {
 
-    @MyInvoke(uri = "/invoke")
+    @MyInvoke(uri = "http://localhost:8082/invoke")
     private UserService userService;
 
-    @MyInvoke(uri = "/invoke")
+    @MyInvoke(uri = "http://localhost:8082/invoke")
     private OrderService orderService;
 
     @Override

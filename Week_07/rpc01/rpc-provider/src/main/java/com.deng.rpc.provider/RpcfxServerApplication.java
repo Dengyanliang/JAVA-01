@@ -3,17 +3,11 @@ package com.deng.rpc.provider;
 import com.deng.rpc.api.OrderService;
 import com.deng.rpc.api.UserService;
 import com.deng.rpc.core.api.RpcfxResolver;
-import com.deng.rpc.core.domain.RpcfxRequest;
-import com.deng.rpc.core.domain.RpcfxResponse;
 import com.deng.rpc.core.server.RpcfxInvoker;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 使用springboot启动，就不用再使用netty服务端启动了，没有必要，因为对于客户端来说，连接只需要端口号和ip即可
@@ -45,12 +39,10 @@ public class RpcfxServerApplication {
 	public RpcfxResolver createResolver(){
 		return new DemoResolver();
 	}
-	// 能否去掉name
-	//
 
 	// annotation
 
-
+	// 能否去掉name---可以去掉
 	@Bean(name = "com.deng.rpc.api.UserService")
 	public UserService createUserService(){
 		return new UserServiceImpl();

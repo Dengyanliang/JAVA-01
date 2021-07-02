@@ -48,9 +48,11 @@ public class MyAspect {
                 Class<?> clazz = field.getType(); // 属性的类型
                 MyInvoke fieldAnnotation = field.getAnnotation(MyInvoke.class);
                 // 为有MyInvoke注解的属性，创建代理对象
-                if(Objects.nonNull(fieldAnnotation)){
+                if(Objects.nonNull(fieldAnnotation)){  // TODO 有点问题
+                    Object proxyObject = Rpcfx.create(clazz, fieldAnnotation.uri());
+                    System.out.println("------proxyObject:" + proxyObject);
                     // 自动生成被代理对象
-                    field.set(target, Rpcfx.create(clazz,urlBuffer.append(fieldAnnotation.uri()).toString()));
+                    field.set(target, proxyObject);
                 }
             }
         } catch (IllegalAccessException e) {

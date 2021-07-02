@@ -7,6 +7,7 @@ import com.deng.rpc.core.api.Filter;
 import com.deng.rpc.core.common.Config;
 import com.deng.rpc.core.domain.RpcfxRequest;
 import com.deng.rpc.core.domain.RpcfxResponse;
+import com.thoughtworks.xstream.XStream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
@@ -39,8 +40,11 @@ public final class Rpcfx {
     }
 
     public static RpcfxResponse post(RpcfxRequest request, String url) throws IOException {
-        String reqJson = JSON.toJSONString(request);
-        System.out.println("req json: "+reqJson);
+//        String reqJson = JSON.toJSONString(request);
+//        System.out.println("req json: "+reqJson);
+
+        XStream reqJson = new XStream();
+        reqJson.toXML(request);
 
         // 1.可以复用client
         // 2.尝试使用httpclient或者netty client
