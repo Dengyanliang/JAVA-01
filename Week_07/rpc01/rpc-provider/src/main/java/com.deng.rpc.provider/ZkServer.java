@@ -1,5 +1,6 @@
 package com.deng.rpc.provider;
 
+import com.deng.rpc.core.common.Config;
 import com.deng.rpc.core.domain.ServiceProviderDesc;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -30,7 +31,7 @@ public class ZkServer implements InitializingBean {
     private void initRegisterService(){
         // start zk client
         RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-        CuratorFramework client = CuratorFrameworkFactory.builder().connectString("localhost:2181").namespace("rpcfx").retryPolicy(retryPolicy).build();
+        CuratorFramework client = CuratorFrameworkFactory.builder().connectString(Config.ZK_CONNECT_STRING).namespace(Config.ZK_NAMESPACE).retryPolicy(retryPolicy).build();
         client.start();
 
         // register service
@@ -47,15 +48,15 @@ public class ZkServer implements InitializingBean {
             ServiceProviderDesc userServiceSesc = ServiceProviderDesc.builder()
                     .host(InetAddress.getLocalHost().getHostAddress())
                     .port(port).serviceClass(service).build();
-            String serviceUrl = "/" + service;
+            String serviceUrl = Config.OBLIQUE_LINE + service;
             if (client.checkExists().forPath(serviceUrl) == null) {
-                client.create().withMode(CreateMode.PERSISTENT).forPath(serviceUrl, "service".getBytes());
+                client.create().withMode(CreateMode.PERSISTENT).forPath(serviceUrl, Config.SERVICE.getBytes());
             }
 
-            String serviceHostUrl = "/" + service + "/" + userServiceSesc.getHost() + "_" + userServiceSesc.getPort();
+            String serviceHostUrl = Config.OBLIQUE_LINE + service + Config.OBLIQUE_LINE + userServiceSesc.getHost() + Config.UNDERLINE + userServiceSesc.getPort();
             if(client.checkExists().forPath(serviceHostUrl) == null){
                 client.create().withMode(CreateMode.EPHEMERAL).
-                        forPath( serviceHostUrl, "provider".getBytes());
+                        forPath( serviceHostUrl, Config.PROVIDER.getBytes());
             }
         } catch (Exception ex) {
             ex.printStackTrace();

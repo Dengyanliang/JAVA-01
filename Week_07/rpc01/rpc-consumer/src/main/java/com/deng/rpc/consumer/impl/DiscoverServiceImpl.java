@@ -1,7 +1,7 @@
 package com.deng.rpc.consumer.impl;
 
 import com.deng.rpc.consumer.service.DiscoverService;
-import com.deng.rpc.core.common.ZkConfig;
+import com.deng.rpc.core.common.Config;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -27,7 +27,7 @@ public class DiscoverServiceImpl implements DiscoverService {
         System.out.println("------DiscoverServiceImpl------");
         invokerMap = new ConcurrentHashMap();
         RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-        client = CuratorFrameworkFactory.builder().connectString(ZkConfig.CONNECT_STRING).retryPolicy(retryPolicy).build();
+        client = CuratorFrameworkFactory.builder().connectString(Config.ZK_CONNECT_STRING).retryPolicy(retryPolicy).build();
         client.start();
     }
 
@@ -38,7 +38,7 @@ public class DiscoverServiceImpl implements DiscoverService {
             return invokers;
         }
         try {
-            String url = ZkConfig.ROOT_PATH + ZkConfig.OBLIQUE_LINE +serviceClass.getName();
+            String url = Config.ZK_ROOT_PATH + Config.OBLIQUE_LINE +serviceClass.getName();
             invokers = client.getChildren().forPath(url);
 
             invokerMap.put(serviceClass.getName(),invokers);

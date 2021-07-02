@@ -4,31 +4,25 @@ import com.alibaba.fastjson.JSON;
 import com.deng.rpc.core.api.Filter;
 import com.deng.rpc.core.domain.RpcfxRequest;
 import com.deng.rpc.core.domain.RpcfxResponse;
+import org.springframework.cglib.proxy.MethodInterceptor;
+import org.springframework.cglib.proxy.MethodProxy;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-public class RpcfxInvocationHandler implements InvocationHandler {
+public class RpcfxMethodInterceptor implements MethodInterceptor {
+
     private final Class<?> serviceClass;
     private final String url;
     private final Filter[] filters;
 
-    public <T> RpcfxInvocationHandler(Class<T> serviceClass, String url, Filter... filters) {
+    public <T> RpcfxMethodInterceptor(Class<T> serviceClass, String url, Filter... filters) {
         this.serviceClass = serviceClass;
         this.url = url;
         this.filters = filters;
     }
 
-    // 可以尝试，自己去写对象序列化，二进制还是文本的，，，rpcfx是xml自定义序列化、反序列化，json: code.google.com/p/rpcfx
-    // int byte char float double long bool
-    // [], data class
-
     @Override
-    public Object invoke(Object proxy, Method method, Object[] params) throws Throwable {
-
-        // 加filter地方之二
-        // mock == true, new Student("hubao");
-
+    public Object intercept(Object o, Method method, Object[] params, MethodProxy methodProxy) throws Throwable {
         RpcfxRequest request = new RpcfxRequest();
         request.setServiceClass(this.serviceClass.getName());
         request.setMethod(method.getName());

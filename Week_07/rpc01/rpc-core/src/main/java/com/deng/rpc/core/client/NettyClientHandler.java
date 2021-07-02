@@ -1,9 +1,6 @@
 package com.deng.rpc.core.client;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.deng.rpc.core.domain.RpcfxResponse;
-import io.netty.buffer.ByteBuf;
+import com.deng.rpc.core.common.Config;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -12,8 +9,6 @@ import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
 
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Objects;
 
 /**
  * @Desc:
@@ -59,7 +54,7 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
             DefaultFullHttpRequest req = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST,
                     uri.toASCIIString(), Unpooled.wrappedBuffer(msg.toString().getBytes("UTF-8")));
 
-            req.headers().set(HttpHeaderNames.CONTENT_TYPE,"application/json;charset=utf8");
+            req.headers().set(HttpHeaderNames.CONTENT_TYPE, Config.JSONTYPE);
             req.headers().set(HttpHeaderNames.HOST, host);
             req.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
             req.headers().set(HttpHeaderNames.CONTENT_LENGTH, req.content().readableBytes());

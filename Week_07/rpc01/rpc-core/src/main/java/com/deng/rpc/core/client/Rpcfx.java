@@ -1,140 +1,100 @@
 package com.deng.rpc.core.client;
 
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.ParserConfig;
 import com.deng.rpc.core.api.Filter;
-import com.deng.rpc.core.api.LoadBalancer;
-import com.deng.rpc.core.api.Router;
+import com.deng.rpc.core.common.Config;
+import com.deng.rpc.core.domain.RpcfxRequest;
+import com.deng.rpc.core.domain.RpcfxResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.curator.RetryPolicy;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.framework.recipes.cache.*;
-import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.springframework.util.CollectionUtils;
+import org.springframework.cglib.proxy.Enhancer;
+import org.springframework.cglib.proxy.MethodInterceptor;
 
-import java.lang.reflect.Proxy;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 public final class Rpcfx {
-
-
-    private static Map<String,List<String>> invokeMap = new ConcurrentHashMap();
 
     static {
         // 解决autotype被禁止问题,这个解禁autotype只针对所设置的这个包下的对象
         ParserConfig.getGlobalInstance().addAccept("com.deng");
     }
 
-    public static <T, filters> T createFromRegistry(final Class<T> serviceClass, final String zkUrl,final String uri,
-                                                    Router router, LoadBalancer loadBalance, Filter filter) {
-
-        // 加filte之一
-
-        // curator Provider list from zk
-        List<String> invokers = new ArrayList<>();
-        invokers.addAll(getInvokers(serviceClass,zkUrl));
-        // 1. 简单：从zk拿到服务提供的列表
-        // 2. 挑战：监听zk的临时节点，根据事件更新这个list（注意，需要做个全局map保持每个服务的提供者List）
-
-        List<String> urls = router.route(invokers);
-
-        String url = loadBalance.select(urls); // router, loadbalance
-
-        String[] addressArr = url.split("_");
-
-        url = "http://" + addressArr[0] + ":" + addressArr[1] + uri;
-        System.out.println("url:"+url);
-
-        return (T) create(serviceClass, url, filter);
-
-    }
-
-    private static List<String> getInvokers(final Class serviceClass, final String zkUrl){
-        List<String> urlList = invokeMap.get(serviceClass.getName());
-        if(!CollectionUtils.isEmpty(urlList)){
-            return urlList;
-        }
-
-        List<String> invokers = new ArrayList<>();
-        try {
-            RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-            CuratorFramework client = CuratorFrameworkFactory.builder().connectString(zkUrl).retryPolicy(retryPolicy).build();
-            client.start();
-
-            String url = "/rpcfx/"+serviceClass.getName();
-            invokers = client.getChildren().forPath(url);
-
-            // 注册监听器
-            registerWatcher(client,url);
-
-            invokeMap.put(serviceClass.getName(),invokers);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return invokers;
-    }
-
-    private static void registerWatcher(CuratorFramework curatorFramework, String path){
-        CuratorCache curatorCache = CuratorCache.build(curatorFramework,path);
-        // 当前节点
-        CuratorCacheListener listener = CuratorCacheListener.builder().forNodeCache(new NodeCacheListener() {
-            @Override
-            public void nodeChanged() throws Exception {
-                System.out.println("---------forNodeCache------------");
-                Optional<ChildData> childData = curatorCache.get(path);
-                if(childData.isPresent()){
-                    String data = new String(childData.get().getData());
-                    System.out.println("data:" + data);
-                }
-            }
-        }).build();
-        curatorCache.listenable().addListener(listener);
-
-        // 监听子节点，不监听当前节点
-        CuratorCacheListener pathCacheListener = CuratorCacheListener.builder().forPathChildrenCache(path, curatorFramework, new PathChildrenCacheListener() {
-            @Override
-            public void childEvent(CuratorFramework curatorFramework, PathChildrenCacheEvent event) throws Exception {
-                System.out.println("---------forPathChildrenCache------------");
-                String type = event.getType().name();
-                System.out.println("pathCacheListener type:" + type);
-                ChildData data = event.getData();
-                if(Objects.nonNull(data)){
-                    String path1 = data.getPath();
-                    String nodeData = new String(data.getData());
-                    System.out.println("pathCacheListener: " + path1 + ":" + nodeData);
-                }
-            }
-        }).build();
-        curatorCache.listenable().addListener(pathCacheListener);
-
-        //
-        CuratorCacheListener treeCacheListener = CuratorCacheListener.builder().forTreeCache(curatorFramework, new TreeCacheListener() {
-            @Override
-            public void childEvent(CuratorFramework curatorFramework, TreeCacheEvent event) throws Exception {
-                System.out.println("---------forTreeCache------------");
-                String type = event.getType().name();
-                System.out.println("treeCacheListener type:" + type);
-                ChildData data = event.getData();
-                if(Objects.nonNull(data)){
-                    String path1 = data.getPath();
-                    String nodeData = new String(data.getData());
-                    System.out.println("treeCacheListener: " + path1 + ":" + nodeData);
-                }
-            }
-        }).build();
-
-        curatorCache.listenable().addListener(treeCacheListener);
-    }
-
-
-
-
     public static <T> T create(final Class<T> serviceClass, final String url, Filter... filters) {
         // 0. 替换动态代理 -> AOP
-        return (T) Proxy.newProxyInstance(Rpcfx.class.getClassLoader(), new Class[]{serviceClass}, new RpcfxInvocationHandler(serviceClass, url, filters));
+//        InvocationHandler invocationHandler = new RpcfxInvocationHandler(serviceClass,url,filters);
+//        return (T) Proxy.newProxyInstance(Rpcfx.class.getClassLoader(), new Class[]{serviceClass}, invocationHandler);
+
+        // 1. Cglib
+        MethodInterceptor methodInterceptor = new RpcfxMethodInterceptor(serviceClass,url,filters);
+
+        Enhancer enhancer = new Enhancer();
+        enhancer.setSuperclass(serviceClass);
+        enhancer.setCallback(methodInterceptor);
+
+        return (T) enhancer.create();
+    }
+
+    public static RpcfxResponse post(RpcfxRequest request, String url) throws IOException {
+        String reqJson = JSON.toJSONString(request);
+        System.out.println("req json: "+reqJson);
+
+        // 1.可以复用client
+        // 2.尝试使用httpclient或者netty client
+
+        // nettyclient
+
+
+        // 1.OKHttpClient
+//            OkHttpClient client = new OkHttpClient();
+//            final Request request = new Request.Builder()
+//                    .url(url)
+//                    .post(RequestBody.create(JSONTYPE, reqJson))
+//                    .build();
+//            String respJson = client.newCall(request).execute().body().string();
+
+        // 2.Httpclient
+//            HttpPost httpPost = new HttpPost(url);
+//            httpPost.setEntity(new StringEntity(reqJson));
+//            httpPost.setHeader("Content-Type","application/json;charset=utf8");
+//
+//            HttpClient httpClient = HttpClientBuilder.create().build();
+//            HttpResponse response = httpClient.execute(httpPost);
+//            HttpEntity responseEntity = response.getEntity();
+//            String respJson = EntityUtils.toString(responseEntity);
+
+        // 3.nettyClient
+        Map urlInfo = getUrlInfo(url);
+        NettyClient nettyClient = new NettyClient(urlInfo.get(Config.HOST).toString(),Integer.parseInt(urlInfo.get(Config.PORT).toString()));
+        NettyClientHandler clientHandler = nettyClient.getClientHandler();
+        clientHandler.sendMessage(reqJson,urlInfo.get(Config.HOST).toString(),urlInfo.get(Config.URI).toString());
+        String respJson = clientHandler.getResult();
+        System.out.println("resp json : "+respJson);
+
+
+
+        return JSON.parseObject(respJson, RpcfxResponse.class);
+    }
+
+    private static Map getUrlInfo(String url){
+        int start = url.indexOf("//");
+        url = url.substring(start+2);
+
+        int end = url.indexOf("/");
+        if(end == -1){
+            end = url.length();
+        }
+        String uri = url.substring(end);
+        String address = url.substring(0,end);
+        String[] addArr = address.split(":");
+        Map map = new HashMap();
+        map.put(Config.HOST,addArr[0]);
+        map.put(Config.PORT,addArr[1]);
+        map.put(Config.URI,uri);
+
+        return map;
     }
 }
