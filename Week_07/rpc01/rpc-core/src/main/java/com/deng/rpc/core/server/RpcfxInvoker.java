@@ -31,14 +31,25 @@ public class RpcfxInvoker {
         // 作业1：改成泛型和反射 //this.applicationContext.getBean(serviceClass);
         Object service = resolver.resolve(serviceClass);
 
+        Object[] params = request.getParams();
+        Class<?>[] parameterTypes = new Class<?>[params.length];
+        for (int i = 0; i < params.length; i++) {
+            parameterTypes[i] = params[i].getClass();
+        }
+
         try {
             Method method = resolveMethodFromClass(service.getClass(), request.getMethod());
+
+            Method method1 = service.getClass().getDeclaredMethod(request.getMethod(),parameterTypes);
+            Object resutl2 = method1.invoke(service, request.getParams());
+            System.out.println("-------------------:" + resutl2);
+
             Object result = method.invoke(service, request.getParams()); // dubbo, fastjson,
             // 两次json序列化能否合并成一个
             response.setResult(JSON.toJSONString(result, SerializerFeature.WriteClassName));
             response.setStatus(true);
             return response;
-        } catch ( IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
 
             // 3.Xstream
 

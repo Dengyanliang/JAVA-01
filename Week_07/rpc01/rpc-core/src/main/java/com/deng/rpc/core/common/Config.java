@@ -14,5 +14,6 @@ public class Config {
     public static final String PORT = "port";
     public static final String URI = "uri";
     public static final MediaType JSONTYPE = MediaType.get("application/json; charset=utf-8");
+    public static final MediaType XMLTYPE = MediaType.get("application/xml; charset=utf-8");
 
 }

@@ -29,12 +29,16 @@ public class MyAspect {
             for (Object arg : args) {
                 System.out.println("------arg:" + arg);
             }
-            MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-            Method method = signature.getMethod(); // 调用的方法
-            System.out.println("------methodName:"+method.getName());
-
             Object target = joinPoint.getTarget(); // 调用的目标类，这里是QueryServiceImpl
             System.out.println("------targetName:"+target.getClass().getName());
+
+            MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
+            Method method = methodSignature.getMethod(); // 调用的方法
+            System.out.println("------methodName:"+method.getName());
+
+            MyInvoke methodAnnotation = method.getAnnotation(MyInvoke.class);
+
+            Method method1 = target.getClass().getMethod(method.getName(), methodSignature.getParameterTypes());
 
             StringBuffer urlBuffer = new StringBuffer();
             MyInvoke classAnnotation = target.getClass().getAnnotation(MyInvoke.class);
@@ -58,6 +62,8 @@ public class MyAspect {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
 

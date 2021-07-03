@@ -3,7 +3,6 @@ package com.deng.rpc.provider;
 import com.deng.rpc.core.domain.RpcfxRequest;
 import com.deng.rpc.core.domain.RpcfxResponse;
 import com.deng.rpc.core.server.RpcfxInvoker;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
