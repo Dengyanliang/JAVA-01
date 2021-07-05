@@ -7,7 +7,6 @@ import com.deng.rpc.core.api.Filter;
 import com.deng.rpc.core.common.Config;
 import com.deng.rpc.core.domain.RpcfxRequest;
 import com.deng.rpc.core.domain.RpcfxResponse;
-import com.thoughtworks.xstream.XStream;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -43,24 +42,24 @@ public final class Rpcfx {
     }
 
     public static RpcfxResponse post(RpcfxRequest rpcfxRequest, String url) throws IOException {
-//        String reqJson = JSON.toJSONString(rpcfxRequest);
-//        System.out.println("req json: "+reqJson);
+        String reqJson = JSON.toJSONString(rpcfxRequest);
+        System.out.println("req json: "+reqJson);
 
-        XStream xStream = new XStream();
-        String reqJson = xStream.toXML(rpcfxRequest);
-        System.out.println("req xml: "+reqJson);
+//        XStream xStream = new XStream();
+//        String reqJson = xStream.toXML(rpcfxRequest);
+//        System.out.println("req xml: " + reqJson);
+
+//        ObjectMapper mapper = new ObjectMapper();
+//        String reqJson = mapper.writeValueAsString(xmlStr);
 
         // 1.可以复用client
         // 2.尝试使用httpclient或者netty client
-
-        // nettyclient
-
 
         // 1.OKHttpClient
             OkHttpClient client = new OkHttpClient();
             final Request request = new Request.Builder()
                     .url(url)
-                    .post(RequestBody.create(Config.XMLTYPE, reqJson))
+                    .post(RequestBody.create(Config.JSONTYPE, reqJson))
                     .build();
             String respJson = client.newCall(request).execute().body().string();
 

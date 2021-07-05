@@ -39,17 +39,16 @@ public class RpcfxInvoker {
 
         try {
             Method method = resolveMethodFromClass(service.getClass(), request.getMethod());
-
-            Method method1 = service.getClass().getDeclaredMethod(request.getMethod(),parameterTypes);
-            Object resutl2 = method1.invoke(service, request.getParams());
-            System.out.println("-------------------:" + resutl2);
+//            Method method = service.getClass().getMethod(request.getMethod(),parameterTypes);
+//            Object resutl2 = method1.invoke(service, request.getParams());
+//            System.out.println("-------------------:" + resutl2);
 
             Object result = method.invoke(service, request.getParams()); // dubbo, fastjson,
             // 两次json序列化能否合并成一个
             response.setResult(JSON.toJSONString(result, SerializerFeature.WriteClassName));
             response.setStatus(true);
             return response;
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
 
             // 3.Xstream
 
