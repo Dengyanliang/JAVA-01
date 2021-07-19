@@ -8,9 +8,13 @@ import com.deng.rpc.core.common.Config;
 import com.deng.rpc.core.domain.RpcfxRequest;
 import com.deng.rpc.core.domain.RpcfxResponse;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.MethodInterceptor;
 
@@ -56,22 +60,22 @@ public final class Rpcfx {
         // 2.尝试使用httpclient或者netty client
 
         // 1.OKHttpClient
-            OkHttpClient client = new OkHttpClient();
-            final Request request = new Request.Builder()
-                    .url(url)
-                    .post(RequestBody.create(Config.JSONTYPE, reqJson))
-                    .build();
-            String respJson = client.newCall(request).execute().body().string();
+//            OkHttpClient client = new OkHttpClient();
+//            final Request request = new Request.Builder()
+//                    .url(url)
+//                    .post(RequestBody.create(Config.JSONTYPE, reqJson))
+//                    .build();
+//            String respJson = client.newCall(request).execute().body().string();
 
         // 2.Httpclient
-//            HttpPost httpPost = new HttpPost(url);
-//            httpPost.setEntity(new StringEntity(reqJson));
-//            httpPost.setHeader("Content-Type","application/json;charset=utf8");
-//
-//            HttpClient httpClient = HttpClientBuilder.create().build();
-//            HttpResponse response = httpClient.execute(httpPost);
-//            HttpEntity responseEntity = response.getEntity();
-//            String respJson = EntityUtils.toString(responseEntity);
+            HttpPost httpPost = new HttpPost(url);
+            httpPost.setEntity(new StringEntity(reqJson));
+            httpPost.setHeader("Content-Type","application/json;charset=utf8");
+
+            HttpClient httpClient = HttpClientBuilder.create().build();
+            HttpResponse response = httpClient.execute(httpPost);
+            HttpEntity responseEntity = response.getEntity();
+            String respJson = EntityUtils.toString(responseEntity);
 
         // 3.nettyClient
 //        Map urlInfo = getUrlInfo(url);

@@ -34,7 +34,7 @@ public class RpcfxInvoker {
         Object[] params = request.getParams();
         Class<?>[] parameterTypes = new Class<?>[params.length];
         for (int i = 0; i < params.length; i++) {
-            parameterTypes[i] = params[i].getClass();
+            parameterTypes[i] = params[i].getClass().getComponentType();
         }
 
         try {
